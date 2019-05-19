@@ -1,6 +1,3 @@
 # IDE files
 /.idea
 /.vscode
-
-# Hide developer's credentials
-praw.ini
