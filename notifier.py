@@ -5,19 +5,37 @@ import re
 def main():
     reddit = praw.Reddit('notifier', user_agent="reddit-manga-notifier")
     manga_stream = reddit.subreddit('manga').stream
-    pattern = re.compile(
-        '^(?:\\[[Dd][Ii][Ss][Cc]\\] ?)?'                    
-        '(?P<Title>.+?)'
-        '(?: ?\\(?|[ :\\|•-]*| ?[Vv]ol\\..*?)'
-        '(?:[Cc]h(?:\\.?|apter)) ?'
-        '(?P<Chapter>\\d+\\.?\\d*).*')
+    pattern = [
+        # Covers most of the post
+        re.compile(
+            '^(?:\\[[Dd][Ii][Ss][Cc]\\] ?)?'                    
+            '(?P<Title>.+?)'
+            '(?: ?\\(?|[ :\\|•-]*| ?[Vv]ol\\..*?)'
+            '(?:[Cc]h(?:\\.?|apter)) ?'
+            '(?P<Chapter>\\d+\\.?\\d*).*'),
+
+        # Covers outlier
+        re.compile(
+            '^(?:\\[[Dd][Ii][Ss][Cc]\\] ?)?'
+            '(?:[Cc]h(?:\\.?|apter)) ?'
+            '(?P<Chapter>\\d+\\.?\\d*) '
+            '(?P<Title>.+)')
+    ]
 
     for submission in manga_stream.submissions():
         if is_manga(submission):
             # ignore manga oneshots and other manga which doesn't follow the pattern
-            match = pattern.search(submission.title)
-            if match:
-                print(match.groups())
+            match = pattern[0].search(submission.title)
+            if match is None:
+                continue
+
+            title, chapter = match.groups()
+
+            if title.isspace():
+                match = pattern[1].search(submission.title)
+                title = match.group('Title')
+
+            print('{} {}'.format(title, chapter))
 
 
 def is_manga(submission):
